@@ -70,9 +70,11 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
       checks: write
       pull-requests: write
+      pages: write
+      id-token: write
 
     steps:
       - name: Checkout repository
@@ -258,7 +260,7 @@ jobs:
                   print(f"  ✅ All {total_pass} tests PASSED")
           PYEOF
 
-      - name: Upload Allure Report
+      - name: Upload Allure Report artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -275,6 +277,29 @@ jobs:
             reports/output/
             reports/screenshots/
           retention-days: 14
+
+      # ── Publish Allure Report to GitHub Pages ──────────────
+      - name: Deploy Allure Report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./reports/allure-report
+          destination_dir: allure-report/${{ github.run_number }}
+          keep_files: true
+
+      - name: Print Allure Report URL
+        if: always()
+        run: |
+          echo "============================================="
+          echo "📊 ALLURE REPORT PUBLISHED!"
+          echo "============================================="
+          echo ""
+          echo "🔗 Open in browser:"
+          echo "   https://abhijit090.github.io/QA_Automation_Pipeline/allure-report/${{ github.run_number }}/"
+          echo ""
+          echo "📦 Or download from Artifacts tab above."
+          echo "============================================="
 
       - name: Fail pipeline if tests failed
         if: steps.robot_run.outcome == 'failure'

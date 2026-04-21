@@ -1,0 +1,34 @@
+# ============================================================
+# AI-POWERED QA AUTOMATION SYSTEM
+# Python Requirements — pip install -r requirements.txt
+#
+# Setup:
+#   1. python -m venv .venv
+#   2. .venv\Scripts\Activate.ps1   (Windows PowerShell)
+#   3. pip install -r requirements.txt
+#   4. Copy .env.example → .env and fill in ANTHROPIC_API_KEY
+#   5. Install Allure CLI: npm install -g allure-commandline
+# ============================================================
+
+# Flask web framework
+flask>=2.3.3
+flask-cors>=4.0.0
+
+# Anthropic Claude AI
+anthropic>=0.25.0
+
+# Robot Framework + Selenium
+robotframework>=7.0.0
+robotframework-seleniumlibrary>=6.3.0
+
+# Allure reporting listener for Robot Framework
+allure-robotframework>=2.13.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# HTTP / Jira API
+requests>=2.32.0
+
+# Utilities
+python-dateutil>=2.9.0

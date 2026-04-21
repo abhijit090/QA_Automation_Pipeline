@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"c:\\\\Users\\\\Abhijit.Jadhav\\\\Desktop\\\\QA_automationscrpit_creation\\\\PlaywrightMCPFOlderStructureenc\\\\tests\\\\generated\")"
+    ]
+  }
+}

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA Automation — Executive Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#1b1f23;color:#e6edf3;min-height:100vh}
+.header{background:linear-gradient(135deg,#0d1117 0%,#161b22 100%);padding:24px 32px;border-bottom:2px solid #1f6feb;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:22px;font-weight:700;color:#fff}
+.header h1 span{color:#58a6ff}
+.header .subtitle{font-size:12px;color:#8b949e;margin-top:2px}
+.header .timestamp{font-size:11px;color:#8b949e;text-align:right}
+.header .timestamp div{margin-top:2px}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding:20px 32px}
+.kpi{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;text-align:center;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.total::before{background:#58a6ff}
+.kpi.pass::before{background:#3fb950}
+.kpi.fail::before{background:#f85149}
+.kpi.rate::before{background:#d29922}
+.kpi.runs::before{background:#bc8cff}
+.kpi-value{font-size:36px;font-weight:800;margin:8px 0}
+.kpi.total .kpi-value{color:#58a6ff}
+.kpi.pass .kpi-value{color:#3fb950}
+.kpi.fail .kpi-value{color:#f85149}
+.kpi.rate .kpi-value{color:#d29922}
+.kpi.runs .kpi-value{color:#bc8cff}
+.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8b949e;font-weight:600}
+.kpi-sub{font-size:10px;color:#484f58;margin-top:4px}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 32px 20px}
+.chart-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px}
+.chart-card h3{font-size:14px;font-weight:600;margin-bottom:16px;color:#e6edf3}
+.donut-wrap{display:flex;align-items:center;justify-content:center;gap:32px}
+.donut{position:relative;width:180px;height:180px}
+.donut svg{transform:rotate(-90deg)}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.donut-center .pct{font-size:32px;font-weight:800;color:#3fb950}
+.donut-center .lbl{font-size:10px;color:#8b949e;text-transform:uppercase}
+.legend{display:flex;flex-direction:column;gap:8px}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.bar-chart{display:flex;flex-direction:column;gap:6px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-label{width:80px;font-size:11px;color:#8b949e;text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:24px;background:#21262d;border-radius:4px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 8px;font-size:10px;font-weight:700;color:#fff;min-width:fit-content;transition:width .6s ease}
+.bar-fill.pass{background:linear-gradient(90deg,#238636,#3fb950)}
+.bar-fill.fail{background:linear-gradient(90deg,#da3633,#f85149)}
+.bar-fill.mixed-pass{background:#238636}
+.bar-fill.mixed-fail{background:#da3633}
+.bar-count{font-size:11px;color:#8b949e;width:40px;text-align:right;flex-shrink:0}
+.table-section{padding:0 32px 32px}
+.table-card{background:#161b22;border:1px solid #30363d;border-radius:12px;overflow:hidden}
+.table-card h3{font-size:14px;font-weight:600;padding:16px 20px;border-bottom:1px solid #30363d;color:#e6edf3}
+table{width:100%;border-collapse:collapse}
+th{background:#0d1117;padding:10px 16px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8b949e;font-weight:600;border-bottom:1px solid #30363d}
+td{padding:10px 16px;font-size:12px;border-bottom:1px solid #21262d;color:#e6edf3}
+tr:hover td{background:#1c2330}
+.badge{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;display:inline-block}
+.badge.pass{background:rgba(63,185,80,.15);color:#3fb950}
+.badge.fail{background:rgba(248,81,73,.15);color:#f85149}
+.msg-cell{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8b949e;font-size:11px}
+.footer{text-align:center;padding:20px;font-size:11px;color:#484f58;border-top:1px solid #30363d}
+@media print{body{background:#fff;color:#000}.header{background:#f6f8fa;border-color:#0969da}.kpi{background:#f6f8fa;border-color:#d0d7de}.chart-card,.table-card{background:#fff;border-color:#d0d7de}th{background:#f6f8fa}td{color:#000}.kpi-label,.legend-item,.bar-label{color:#57606a}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>🤖 <span>AI-Powered QA</span> — Executive Dashboard</h1>
+    <div class="subtitle">Automated Test Execution Report — Content Transformation Tool</div>
+  </div>
+  <div class="timestamp">
+    <div>Generated: <strong>{{generated_at}}</strong></div>
+    <div>Total Runs Analyzed: <strong>{{total_runs}}</strong></div>
+  </div>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi total">
+    <div class="kpi-label">Total Tests</div>
+    <div class="kpi-value">{{total_tests}}</div>
+    <div class="kpi-sub">across all runs</div>
+  </div>
+  <div class="kpi pass">
+    <div class="kpi-label">Passed</div>
+    <div class="kpi-value">{{total_passed}}</div>
+    <div class="kpi-sub">✅ successful</div>
+  </div>
+  <div class="kpi fail">
+    <div class="kpi-label">Failed</div>
+    <div class="kpi-value">{{total_failed}}</div>
+    <div class="kpi-sub">❌ need attention</div>
+  </div>
+  <div class="kpi rate">
+    <div class="kpi-label">Pass Rate</div>
+    <div class="kpi-value">{{pass_rate}}%</div>
+    <div class="kpi-sub">overall success</div>
+  </div>
+  <div class="kpi runs">
+    <div class="kpi-label">Test Runs</div>
+    <div class="kpi-value">{{total_runs}}</div>
+    <div class="kpi-sub">executions</div>
+  </div>
+</div>
+
+<div class="charts-row">
+  <div class="chart-card">
+    <h3>📊 Test Results Distribution</h3>
+    <div class="donut-wrap">
+      <div class="donut">
+        <svg viewBox="0 0 180 180" width="180" height="180">
+          <circle cx="90" cy="90" r="70" fill="none" stroke="#21262d" stroke-width="20"/>
+          <circle cx="90" cy="90" r="70" fill="none" stroke="#3fb950" stroke-width="20"
+            stroke-dasharray="{{pass_dash}} {{pass_gap}}" stroke-linecap="round"/>
+          <circle cx="90" cy="90" r="70" fill="none" stroke="#f85149" stroke-width="20"
+            stroke-dasharray="{{fail_dash}} {{fail_gap}}" stroke-dashoffset="-{{pass_dash}}" stroke-linecap="round"/>
+        </svg>
+        <div class="donut-center">
+          <div class="pct">{{pass_rate}}%</div>
+          <div class="lbl">Pass Rate</div>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#3fb950"></div>Passed: {{total_passed}}</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f85149"></div>Failed: {{total_failed}}</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#21262d"></div>Total: {{total_tests}}</div>
+      </div>
+    </div>
+  </div>
+  <div class="chart-card">
+    <h3>📈 Results by Run (Last {{bar_count}} Runs)</h3>
+    <div class="bar-chart">
+      {{bar_rows}}
+    </div>
+  </div>
+</div>
+
+<div class="table-section">
+  <div class="table-card">
+    <h3>📋 Detailed Test Results — Latest Run</h3>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Test Name</th><th>Status</th><th>Message</th></tr>
+      </thead>
+      <tbody>
+        {{test_rows}}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer">
+  AI-Powered QA Automation System — Report generated on {{generated_at}} | Powered by Robot Framework + Claude AI
+</div>
+</body>
+</html>

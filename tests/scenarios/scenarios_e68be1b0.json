@@ -1,0 +1,26 @@
+{
+  "script_id": "e68be1b0",
+  "app_url": "https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+  "username": "testd1051@gmail.com",
+  "suite_name": "Login functionlity",
+  "scenarios": {
+    "positive_scenarios": [
+      {
+        "expected_result": "User is successfully authenticated and redirected to the application dashboard/home page",
+        "id": "TC_POS_001",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter 'testd1051@gmail.com' in the username/email field",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the user is redirected to the home/dashboard page",
+          "Verify the authenticated user's name or profile indicator is displayed on the page"
+        ],
+        "title": "Successful login with valid username and password",
+        "type": "positive"
+      }
+    ],
+    "negative_scenarios": []
+  }
+}

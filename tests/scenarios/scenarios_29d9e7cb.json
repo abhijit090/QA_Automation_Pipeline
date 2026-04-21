@@ -1,0 +1,45 @@
+{
+  "script_id": "29d9e7cb",
+  "app_url": "https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+  "username": "testd1051@gmail.com",
+  "suite_name": "login functionlity",
+  "scenarios": {
+    "positive_scenarios": [
+      {
+        "expected_result": "User is successfully authenticated and redirected to the dashboard/home page with a valid session established",
+        "id": "TC_POS_001",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Verify the login page is displayed with username and password fields",
+          "Enter 'testd1051@gmail.com' in the username/email field",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the user is redirected away from the login page",
+          "Verify the authenticated home page or dashboard is displayed",
+          "Verify the user's account name or profile indicator is visible on the page"
+        ],
+        "title": "Successful login with valid username and password",
+        "type": "positive"
+      },
+      {
+        "expected_result": "User session persists after page refresh; user remains authenticated without being forced to log in again",
+        "id": "TC_POS_002",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter 'testd1051@gmail.com' in the username/email field",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the user is redirected to the dashboard/home page",
+          "Refresh the browser page (F5 or browser refresh button)",
+          "Verify the user remains logged in and is NOT redirected back to the login page",
+          "Verify the dashboard/home page content is still displayed"
+        ],
+        "title": "Successful login and verify session persistence on page refresh",
+        "type": "positive"
+      }
+    ],
+    "negative_scenarios": []
+  }
+}

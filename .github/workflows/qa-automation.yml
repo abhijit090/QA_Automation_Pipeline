@@ -1,0 +1,247 @@
+# ============================================================
+# AI-Powered QA Automation — GitHub Actions CI/CD Pipeline
+# ============================================================
+#
+# HOW TO RUN:
+#   Option A (Auto): git push to main/master — pipeline starts automatically
+#   Option B (Manual via gh CLI):
+#     gh workflow run qa-automation.yml \
+#       --field test_script=tests/generated \
+#       --field base_url=https://yourapp.com \
+#       --field headless=true
+#   Option C (GitHub UI):
+#     Repo → Actions → QA Automation Pipeline → Run workflow
+#
+# REQUIRED GITHUB SECRETS (Repo → Settings → Secrets → Actions):
+#   ANTHROPIC_API_KEY   — Claude AI key  (console.anthropic.com)
+#   TEST_BASE_URL       — App URL        (e.g. https://development.d3i5...amplifyapp.com)
+#   TEST_USERNAME       — Login email    (e.g. testd1051@gmail.com)
+#   TEST_PASSWORD       — Login password
+#   JIRA_BASE_URL       — https://yourcompany.atlassian.net  (optional)
+#   JIRA_USERNAME       — your.email@company.com             (optional)
+#   JIRA_API_TOKEN      — Jira API token                     (optional)
+#   JIRA_PROJECT_KEY    — Project key e.g. SBST              (optional)
+#   JIRA_BOARD_ID       — Board ID e.g. 1569                 (optional)
+# ============================================================
+
+name: QA Automation Pipeline
+
+on:
+  # ── Auto-trigger on push to main/master when robot/backend files change ──
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'tests/generated/**.robot'
+      - 'tests/resources/**.robot'
+      - 'backend/**'
+      - 'requirements.txt'
+      - '.github/workflows/qa-automation.yml'
+
+  # ── Auto-trigger on Pull Requests ──────────────────────────
+  pull_request:
+    branches: [ main, master ]
+
+  # ── Manual trigger from GitHub UI or gh CLI ────────────────
+  workflow_dispatch:
+    inputs:
+      test_script:
+        description: 'Robot script or folder to run'
+        required: false
+        default: 'tests/generated'
+      base_url:
+        description: 'App URL (leave blank to use TEST_BASE_URL secret)'
+        required: false
+        default: ''
+      username:
+        description: 'Login username (leave blank to use TEST_USERNAME secret)'
+        required: false
+        default: ''
+      password:
+        description: 'Login password (leave blank to use TEST_PASSWORD secret)'
+        required: false
+        default: ''
+      headless:
+        description: 'Headless browser? true = CI mode, false = visible browser'
+        required: false
+        default: 'true'
+      browser:
+        description: 'Browser to use (Chrome / Firefox / Edge)'
+        required: false
+        default: 'Chrome'
+
+# ── Cancel in-progress runs when a new push arrives ─────────
+concurrency:
+  group: qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qa-automation:
+    name: QA Automation Tests
+    runs-on: ubuntu-latest
+    # To use your own Windows PC instead, replace the line above with:
+    #   runs-on: self-hosted
+
+    # ── Expose run summary in GitHub UI ─────────────────────────
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+      # ── STEP 1: Checkout code ─────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── STEP 2: Python 3.11 ───────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # ── STEP 3: Chrome + ChromeDriver ─────────────────────────
+      - name: Install Chrome (stable)
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Install matching ChromeDriver
+        uses: nanasess/setup-chromedriver@v2
+
+      # ── STEP 4: Virtual display (for non-headless on Linux CI) ─
+      - name: Start virtual display (Xvfb)
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 -screen 0 1920x1080x24 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
+      # ── STEP 5: Allure CLI ────────────────────────────────────
+      - name: Install Allure CLI
+        run: npm install -g allure-commandline
+
+      # ── STEP 6: Create output directories ────────────────────
+      - name: Prepare report directories
+        run: |
+          mkdir -p reports/allure-results
+          mkdir -p reports/allure-report
+          mkdir -p reports/output
+          mkdir -p reports/screenshots
+
+      # ── STEP 7: Write .env from GitHub Secrets ───────────────
+      - name: Write .env file from secrets
+        run: |
+          cat > .env <<EOF
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          AI_MODEL=claude-sonnet-4-6
+          JIRA_BASE_URL=${{ secrets.JIRA_BASE_URL }}
+          JIRA_USERNAME=${{ secrets.JIRA_USERNAME }}
+          JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }}
+          JIRA_PROJECT_KEY=${{ secrets.JIRA_PROJECT_KEY }}
+          JIRA_BOARD_ID=${{ secrets.JIRA_BOARD_ID }}
+          EOF
+
+      # ── STEP 8: Run Robot Framework tests ────────────────────
+      - name: Run Robot Framework tests
+        id: robot_run
+        run: |
+          # Resolve inputs — manual override takes priority over secrets
+          SCRIPT="${{ github.event.inputs.test_script }}"
+          SCRIPT="${SCRIPT:-tests/generated}"
+
+          URL="${{ github.event.inputs.base_url }}"
+          URL="${URL:-${{ secrets.TEST_BASE_URL }}}"
+
+          USER="${{ github.event.inputs.username }}"
+          USER="${USER:-${{ secrets.TEST_USERNAME }}}"
+
+          PASS="${{ github.event.inputs.password }}"
+          PASS="${PASS:-${{ secrets.TEST_PASSWORD }}}"
+
+          HEADLESS="${{ github.event.inputs.headless }}"
+          HEADLESS="${HEADLESS:-true}"
+
+          BROWSER="${{ github.event.inputs.browser }}"
+          BROWSER="${BROWSER:-Chrome}"
+
+          echo "=================================================="
+          echo " Script  : $SCRIPT"
+          echo " URL     : $URL"
+          echo " Headless: $HEADLESS"
+          echo " Browser : $BROWSER"
+          echo "=================================================="
+
+          python -m robot \
+            --outputdir  reports/output \
+            --output     output.xml \
+            --log        log.html \
+            --report     report.html \
+            --loglevel   INFO \
+            --listener   allure_robotframework;reports/allure-results \
+            --variable   BASE_URL:"${URL}" \
+            --variable   USERNAME:"${USER}" \
+            --variable   PASSWORD:"${PASS}" \
+            --variable   HEADLESS:"${HEADLESS}" \
+            --variable   BROWSER:"${BROWSER}" \
+            --variable   SCREENSHOT_DIR:reports/screenshots \
+            --timestampoutputs \
+            "${SCRIPT}"
+        continue-on-error: true    # upload reports even on test failure
+
+      # ── STEP 9: Generate Allure HTML report ──────────────────
+      - name: Generate Allure report
+        if: always()
+        run: |
+          allure generate reports/allure-results \
+            --output reports/allure-report \
+            --clean
+          echo "Allure report generated."
+
+      # ── STEP 10: Print pass/fail summary to console ──────────
+      - name: Print test summary
+        if: always()
+        run: |
+          echo "====== TEST SUMMARY ======"
+          python - <<'PYEOF'
+          import xml.etree.ElementTree as ET, os, glob
+          xmls = glob.glob("reports/output/**/output.xml", recursive=True)
+          if not xmls:
+              print("No output.xml found.")
+          else:
+              for xml in xmls:
+                  root = ET.parse(xml).getroot()
+                  stat = root.find(".//statistics/total/stat")
+                  if stat is not None:
+                      print(f"PASS: {stat.get('pass',0)}  FAIL: {stat.get('fail',0)}  FILE: {xml}")
+          PYEOF
+
+      # ── STEP 11: Upload Allure HTML report ───────────────────
+      - name: Upload Allure Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-report-run-${{ github.run_number }}
+          path: reports/allure-report/
+          retention-days: 30
+
+      # ── STEP 12: Upload RF outputs + screenshots ─────────────
+      - name: Upload Robot Framework outputs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rf-output-run-${{ github.run_number }}
+          path: |
+            reports/output/
+            reports/screenshots/
+          retention-days: 14
+
+      # ── STEP 13: Fail the job if tests failed ─────────────────
+      - name: Fail pipeline if tests failed
+        if: steps.robot_run.outcome == 'failure'
+        run: |
+          echo "One or more Robot Framework tests FAILED."
+          exit 1

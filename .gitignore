@@ -1,0 +1,35 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Environment — NEVER commit real credentials
+.env
+
+# Robot Framework runtime output (regenerated each run)
+reports/allure-results/
+reports/allure-report/
+reports/output/
+reports/screenshots/
+reports/powerbi_export.csv
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+*.iml
+
+# Playwright leftovers
+test-results/
+playwright-report/

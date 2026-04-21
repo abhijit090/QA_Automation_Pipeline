@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI-Powered QA Automation</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <!-- Highlight.js for Robot Framework syntax highlighting -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"/>
+</head>
+<body>
+
+<!-- ═══════════════════════════ HEADER ══════════════════════════════ -->
+<header class="app-header">
+  <div class="header-brand">
+    <span class="brand-icon">⚡</span>
+    <span class="brand-title">AI-Powered QA Automation</span>
+    <span class="brand-sub">Robot Framework · Claude AI · Allure</span>
+  </div>
+  <div class="header-status">
+    <span id="statusDot" class="status-dot idle"></span>
+    <span id="statusText">Ready</span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════ LAYOUT ══════════════════════════════ -->
+<div class="layout">
+
+  <!-- ───────────── LEFT SIDEBAR — Input Form ─────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <h2 class="section-title">Configuration</h2>
+
+      <label class="field-label">Application URL</label>
+      <input id="appUrl" class="field-input" type="url"
+             placeholder="https://your-app.com" />
+
+      <label class="field-label">Username</label>
+      <input id="username" class="field-input" type="text"
+             placeholder="admin@example.com"
+             oninput="onCredentialChange()" />
+
+      <label class="field-label">Password</label>
+      <input id="password" class="field-input" type="password"
+             placeholder="••••••••"
+             oninput="onCredentialChange()" />
+
+      <!-- Live credential status shown here -->
+      <div id="credIndicator" class="cred-indicator hidden">
+        <span id="credUserBadge" class="cred-badge">👤</span>
+        <span id="credPassBadge" class="cred-badge">🔑</span>
+        <button class="btn btn-sm cred-sync-btn" onclick="syncCredentials()"
+                title="Push credentials into the script Variables section">
+          ↺ Sync to Script
+        </button>
+      </div>
+
+      <label class="field-label">Anthropic API Key</label>
+      <input id="apiKey" class="field-input" type="password"
+             placeholder="sk-ant-… (or set in .env)" />
+
+      <label class="field-label">Description / Scenario Title</label>
+      <textarea id="description" class="field-textarea" rows="4"
+        placeholder="Describe what you want to test…
+e.g. Login functionality with valid and invalid credentials"></textarea>
+
+      <div class="btn-group">
+        <button id="btnGenScenarios" class="btn btn-primary" onclick="generateScenarios()">
+          🧠 Generate Scenarios
+        </button>
+      </div>
+    </div>
+
+    <!-- Jira Panel -->
+    <div class="sidebar-section">
+      <div class="collapsible-header" onclick="toggleJira()">
+        <h2 class="section-title">Jira Integration</h2>
+        <span id="jiraToggleIcon">▼</span>
+      </div>
+      <div id="jiraPanel" class="collapsed">
+        <label class="field-label">Jira Base URL</label>
+        <input id="jiraUrl" class="field-input" type="url"
+               placeholder="https://company.atlassian.net" />
+
+        <label class="field-label">Jira Username</label>
+        <input id="jiraUsername" class="field-input" type="text"
+               placeholder="you@company.com" />
+
+        <label class="field-label">Jira API Token</label>
+        <input id="jiraToken" class="field-input" type="password"
+               placeholder="Jira API token" />
+
+        <label class="field-label">Project Key</label>
+        <input id="jiraProject" class="field-input" type="text"
+               placeholder="QA" />
+
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="testJiraConnection()">
+            🔗 Test Connection
+          </button>
+          <button class="btn btn-secondary" onclick="fetchJiraTickets()">
+            📋 Fetch Done Tickets
+          </button>
+        </div>
+        <div id="jiraStatus" class="jira-status hidden"></div>
+        <div id="jiraTickets" class="jira-tickets"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ────────────── MAIN CONTENT — Tabs ──────────────────── -->
+  <main class="main-content">
+
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="scenarios" onclick="switchTab('scenarios', this)">
+        📋 Scenarios
+      </button>
+      <button class="tab-btn" data-tab="script" onclick="switchTab('script', this)">
+        🤖 RF Script
+      </button>
+      <button class="tab-btn" data-tab="execution" onclick="switchTab('execution', this)">
+        ▶ Execution
+      </button>
+      <button class="tab-btn" data-tab="reports" onclick="switchTab('reports', this)">
+        📊 Reports
+      </button>
+    </div>
+
+    <!-- ── TAB: Scenarios ─────────────────────────────────── -->
+    <div id="tab-scenarios" class="tab-content active">
+      <div class="tab-toolbar">
+        <span class="tab-subtitle">AI-generated test scenarios — select what to include</span>
+        <div class="toolbar-actions">
+          <button class="btn btn-sm" onclick="selectAllScenarios(true)">Select All</button>
+          <button class="btn btn-sm" onclick="selectAllScenarios(false)">Deselect All</button>
+          <button class="btn btn-sm btn-primary" onclick="addNewScenario()">+ Add Scenario</button>
+          <button id="btnGenScript" class="btn btn-primary btn-sm" onclick="generateScript()"
+                  disabled>
+            ⚙ Generate RF Script
+          </button>
+        </div>
+      </div>
+
+      <div id="scenariosEmpty" class="empty-state">
+        <div class="empty-icon">🧪</div>
+        <p>Enter a description and click <strong>Generate Scenarios</strong> to get started.</p>
+      </div>
+
+      <div id="scenariosContainer" class="scenarios-grid hidden"></div>
+    </div>
+
+    <!-- ── TAB: RF Script ─────────────────────────────────── -->
+    <div id="tab-script" class="tab-content">
+      <div class="tab-toolbar">
+        <div class="toolbar-left">
+          <span class="tab-subtitle">Edit the Robot Framework script before running</span>
+          <span id="saveStatus" class="save-status"></span>
+        </div>
+        <div class="toolbar-actions">
+          <button id="btnSyncCreds" class="btn btn-sm" onclick="syncCredentials()" disabled
+                  title="Replace ${USERNAME} and ${PASSWORD} in Variables section with sidebar values">
+            ↺ Sync Credentials
+          </button>
+          <button id="btnSaveScript" class="btn btn-sm" onclick="saveScript()" disabled>
+            💾 Save Edits
+          </button>
+          <button id="btnDownloadScript" class="btn btn-sm" onclick="downloadScript()"
+                  disabled>
+            ⬇ Download .robot
+          </button>
+          <button id="btnRunScript" class="btn btn-primary btn-sm" onclick="runExecution()"
+                  disabled>
+            ▶ Run Execution
+          </button>
+        </div>
+      </div>
+
+      <div id="scriptEmpty" class="empty-state">
+        <div class="empty-icon">🤖</div>
+        <p>Select scenarios and click <strong>Generate RF Script</strong>.</p>
+      </div>
+
+      <!-- Editable script area -->
+      <div id="scriptContainer" class="script-editor-wrap hidden">
+        <div class="script-editor-header">
+          <span class="editor-lang-tag">Robot Framework</span>
+          <span id="editorLineCount" class="editor-line-count"></span>
+        </div>
+        <textarea
+          id="scriptCode"
+          class="script-editor"
+          spellcheck="false"
+          autocorrect="off"
+          autocapitalize="off"
+          placeholder="Generated script will appear here — you can edit it directly…"
+          oninput="onScriptEdit()"
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- ── TAB: Execution ─────────────────────────────────── -->
+    <div id="tab-execution" class="tab-content">
+      <div class="tab-toolbar">
+        <span class="tab-subtitle">Real-time execution log</span>
+        <div class="toolbar-actions">
+          <div id="testStats" class="test-stats hidden">
+            <span class="stat pass" id="statPassed">✅ 0</span>
+            <span class="stat fail" id="statFailed">❌ 0</span>
+            <span class="stat total" id="statTotal">📊 0</span>
+          </div>
+          <button class="btn btn-sm" onclick="clearConsole()">🗑 Clear</button>
+          <button id="btnRunFromExec" class="btn btn-primary btn-sm"
+                  onclick="runExecution()" disabled>
+            ▶ Run Execution
+          </button>
+        </div>
+      </div>
+
+      <div id="console" class="console">
+        <div class="console-placeholder">Execution logs will appear here…</div>
+      </div>
+
+      <!-- Step-by-step test results -->
+      <div id="testResultsContainer" class="test-results hidden">
+        <h3 class="results-title">Test Results</h3>
+        <div id="testResultsList" class="test-results-list"></div>
+      </div>
+    </div>
+
+    <!-- ── TAB: Reports ───────────────────────────────────── -->
+    <div id="tab-reports" class="tab-content">
+      <div class="tab-toolbar">
+        <span class="tab-subtitle">Test reports &amp; data export</span>
+        <div class="toolbar-actions">
+          <button id="btnAllureReport" class="btn btn-primary btn-sm"
+                  onclick="generateAllureReport()" disabled>
+            📊 Generate Allure Report
+          </button>
+          <button id="btnPowerBI" class="btn btn-sm"
+                  onclick="exportPowerBI()" disabled>
+            📈 Export PowerBI CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="reports-grid">
+        <!-- RF Native Reports -->
+        <div class="report-card" id="rfReportCard">
+          <div class="report-icon">📄</div>
+          <div class="report-info">
+            <h4>Robot Framework Report</h4>
+            <p>HTML execution report + detailed log generated after each run.</p>
+            <div class="report-links" id="rfReportLinks">
+              <span class="muted">Run tests first.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Allure Report -->
+        <div class="report-card" id="allureReportCard">
+          <div class="report-icon">🔮</div>
+          <div class="report-info">
+            <h4>Allure Report</h4>
+            <p>Rich interactive report with steps, screenshots, and trends.</p>
+            <div class="report-links" id="allureReportLinks">
+              <span class="muted">Generate after running tests.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PowerBI Export -->
+        <div class="report-card">
+          <div class="report-icon">📊</div>
+          <div class="report-info">
+            <h4>PowerBI Export</h4>
+            <p>CSV with test_name, status, duration, suite, environment columns.</p>
+            <div class="report-links" id="powerbiLinks">
+              <span class="muted">Available after test run.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Run Summary -->
+        <div class="report-card" id="summaryCard">
+          <div class="report-icon">🏆</div>
+          <div class="report-info">
+            <h4>Run Summary</h4>
+            <div id="summaryContent">
+              <span class="muted">No run yet.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main><!-- /main-content -->
+</div><!-- /layout -->
+
+<!-- ═══════════════════════ LOADING OVERLAY ════════════════════════ -->
+<div id="overlay" class="overlay hidden">
+  <div class="spinner-box">
+    <div class="spinner"></div>
+    <p id="overlayMsg">Processing…</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ TOAST ═══════════════════════════════ -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

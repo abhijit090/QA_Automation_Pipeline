@@ -1,0 +1,233 @@
+{
+  "script_id": "faeaf2b0",
+  "app_url": "https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+  "username": "testd1051@gmail.com",
+  "suite_name": "Login and logout functionity verify",
+  "scenarios": {
+    "positive_scenarios": [
+      {
+        "expected_result": "User is successfully authenticated and redirected to the dashboard/home page with their account information displayed",
+        "id": "TC_POS_001",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter 'testd1051@gmail.com' in the email/username field",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify that the user is redirected away from the login page",
+          "Verify that the dashboard or home page is displayed",
+          "Verify that the logged-in user's name or email 'testd1051@gmail.com' is visible in the header or profile section"
+        ],
+        "title": "Successful login with valid credentials",
+        "type": "positive"
+      },
+      {
+        "expected_result": "User is successfully logged out, session is terminated, and the login page is displayed. Protected routes are no longer accessible.",
+        "id": "TC_POS_002",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter 'testd1051@gmail.com' in the email/username field",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the dashboard or home page is displayed",
+          "Locate and click the 'Logout' or 'Sign Out' button (e.g., in the navigation menu or profile dropdown)",
+          "Verify the user is redirected back to the login page",
+          "Verify a logout confirmation message is displayed (if applicable)",
+          "Verify that accessing a protected route now redirects back to the login page"
+        ],
+        "title": "Successful logout after login",
+        "type": "positive"
+      },
+      {
+        "expected_result": "All expected UI elements on the login page are rendered correctly and are interactive",
+        "id": "TC_POS_003",
+        "priority": "Medium",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Verify the login page title or heading is displayed (e.g., 'Login', 'Sign In')",
+          "Verify the email/username input field is present and enabled",
+          "Verify the password input field is present and enabled",
+          "Verify the password field masks entered characters",
+          "Verify the 'Login' / 'Submit' button is present and enabled",
+          "Verify any 'Forgot Password' or 'Remember Me' links/checkboxes are visible (if applicable)"
+        ],
+        "title": "Login page renders all required UI elements correctly",
+        "type": "positive"
+      },
+      {
+        "expected_result": "The authenticated session persists after a page refresh and the user remains on the protected page",
+        "id": "TC_POS_004",
+        "priority": "Medium",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter 'testd1051@gmail.com' in the email/username field",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the dashboard or home page is displayed",
+          "Refresh the browser page (F5 or browser refresh button)",
+          "Verify the user is still logged in and the dashboard/home page remains displayed",
+          "Verify the user is NOT redirected back to the login page after refresh"
+        ],
+        "title": "Session persistence \u2014 user remains logged in on page refresh",
+        "type": "positive"
+      },
+      {
+        "expected_result": "User is successfully authenticated regardless of the email case, confirming the system handles email case-insensitivity correctly",
+        "id": "TC_POS_005",
+        "priority": "Low",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter 'TESTD1051@GMAIL.COM' (uppercase version of the valid email) in the email/username field",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the user is successfully logged in and redirected to the dashboard/home page"
+        ],
+        "title": "Login with email containing uppercase characters (case-insensitivity check)",
+        "type": "positive"
+      },
+      {
+        "expected_result": "After successful login, the user is redirected to the protected page they originally attempted to access",
+        "id": "TC_POS_006",
+        "priority": "Medium",
+        "steps": [
+          "Open the browser and directly navigate to a known protected URL within the application (e.g., https://development.d36z6oo50ky8dh.amplifyapp.com/dashboard)",
+          "Verify the user is redirected to the login page at https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter 'testd1051@gmail.com' in the email/username field",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the user is redirected to the originally requested protected page (e.g., /dashboard) and not just the default home page"
+        ],
+        "title": "Redirect to originally requested protected page after successful login",
+        "type": "positive"
+      }
+    ],
+    "negative_scenarios": [
+      {
+        "expected_result": "Form submission is blocked and validation error messages are displayed for both empty email and password fields",
+        "id": "TC_NEG_001",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Leave the email/username field empty",
+          "Leave the password field empty",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the user is NOT redirected away from the login page",
+          "Verify appropriate validation error messages are displayed (e.g., 'Email is required', 'Password is required')"
+        ],
+        "title": "Login attempt with empty email and empty password fields",
+        "type": "negative"
+      },
+      {
+        "expected_result": "Login fails and a relevant error message is displayed. The user remains on the login page.",
+        "id": "TC_NEG_002",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter 'testd1051@gmail.com' in the email/username field",
+          "Enter an incorrect password (e.g., 'WrongPassword123!') in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the user is NOT redirected away from the login page",
+          "Verify an error message is displayed (e.g., 'Invalid credentials', 'Incorrect password', or 'Email or password is incorrect')"
+        ],
+        "title": "Login attempt with valid email but incorrect password",
+        "type": "negative"
+      },
+      {
+        "expected_result": "Form submission is blocked or login fails with a validation error message indicating an invalid email format",
+        "id": "TC_NEG_003",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter an invalid email format 'testd1051gmail.com' (missing @) in the email/username field",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the user is NOT redirected away from the login page",
+          "Verify a validation error message is displayed (e.g., 'Please enter a valid email address')"
+        ],
+        "title": "Login attempt with invalid email format",
+        "type": "negative"
+      },
+      {
+        "expected_result": "Form submission is blocked and a password required validation error message is displayed",
+        "id": "TC_NEG_004",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter 'testd1051@gmail.com' in the email/username field",
+          "Leave the password field completely empty",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the user is NOT redirected away from the login page",
+          "Verify a validation error message is displayed for the password field (e.g., 'Password is required')"
+        ],
+        "title": "Login attempt with empty password field only",
+        "type": "negative"
+      },
+      {
+        "expected_result": "Login fails with a generic error message that does not reveal whether the email account exists in the system",
+        "id": "TC_NEG_005",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter a non-existent email 'nonexistentuser9999@gmail.com' in the email/username field",
+          "Enter any password (e.g., 'SomePassword123!') in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the user is NOT redirected away from the login page",
+          "Verify an error message is displayed (e.g., 'Invalid credentials' or 'No account found with this email')",
+          "Verify that the error message does NOT specifically confirm whether the email exists (to prevent user enumeration)"
+        ],
+        "title": "Login attempt with unregistered/non-existent email address",
+        "type": "negative"
+      },
+      {
+        "expected_result": "Form submission is blocked and an email required validation error message is displayed",
+        "id": "TC_NEG_006",
+        "priority": "Medium",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Leave the email/username field completely empty",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the user is NOT redirected away from the login page",
+          "Verify a validation error message is displayed for the email field (e.g., 'Email is required')"
+        ],
+        "title": "Login attempt with empty email field only",
+        "type": "negative"
+      },
+      {
+        "expected_result": "After logout, the session is fully invalidated and any direct attempt to access a protected URL redirects the user back to the login page",
+        "id": "TC_NEG_007",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter 'testd1051@gmail.com' in the email/username field",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the dashboard or home page is displayed and copy the current protected URL",
+          "Click the 'Logout' / 'Sign Out' button",
+          "Verify the user is redirected to the login page",
+          "Attempt to navigate directly to the previously copied protected URL",
+          "Verify the user is redirected back to the login page and cannot access the protected content"
+        ],
+        "title": "Accessing protected page directly after logout (session invalidation check)",
+        "type": "negative"
+      },
+      {
+        "expected_result": "The application handles the SQL injection attempt gracefully, login is denied, and no sensitive server information is leaked",
+        "id": "TC_NEG_008",
+        "priority": "Medium",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter a SQL injection string (e.g., \"' OR '1'='1\") in the email/username field",
+          "Enter any value (e.g., 'password') in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the user is NOT logged in or redirected to a protected page",
+          "Verify an appropriate error message is displayed (e.g., 'Invalid credentials' or 'Invalid email format')",
+          "Verify no unhandled server error or stack trace is exposed to the user"
+        ],
+        "title": "Login attempt with SQL injection in email field",
+        "type": "negative"
+      }
+    ]
+  }
+}

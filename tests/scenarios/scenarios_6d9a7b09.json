@@ -1,0 +1,65 @@
+{
+  "script_id": "6d9a7b09",
+  "app_url": "https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+  "username": "testd1051@gmail.com",
+  "suite_name": "login ctt withe extrnal user and verify the ctt home page and open project",
+  "scenarios": {
+    "positive_scenarios": [
+      {
+        "expected_result": "User is successfully authenticated and redirected to the CTT home page displaying the correct user session",
+        "id": "TC_POS_001",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Verify the login page is displayed with username field, password field, and Login button",
+          "Enter 'testd1051@gmail.com' in the email/username field",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the page redirects away from the login URL",
+          "Verify the CTT home page is displayed successfully",
+          "Verify the logged-in user identifier or welcome message reflects 'testd1051@gmail.com' or associated display name"
+        ],
+        "title": "Successful login with valid external CTT user credentials",
+        "type": "positive"
+      },
+      {
+        "expected_result": "CTT home page loads completely with all UI components \u2014 navigation, header, project list, and branding \u2014 rendered correctly without errors",
+        "id": "TC_POS_002",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter 'testd1051@gmail.com' in the email/username field",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the CTT home page is displayed",
+          "Verify the navigation menu/header is visible",
+          "Verify the projects section or project list is displayed on the home page",
+          "Verify there are no broken elements, console errors, or loading spinners still active",
+          "Verify the page title or branding matches the CTT application"
+        ],
+        "title": "Verify CTT home page UI elements are fully loaded after login",
+        "type": "positive"
+      },
+      {
+        "expected_result": "The selected project opens successfully and the project detail/workspace page is displayed with relevant project content",
+        "id": "TC_POS_003",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Enter 'testd1051@gmail.com' in the email/username field",
+          "Enter the valid password in the password field",
+          "Click the 'Login' / 'Submit' button",
+          "Verify the CTT home page is displayed with the project list",
+          "Identify at least one project listed on the home page",
+          "Click on the first available project name or 'Open' button associated with a project",
+          "Verify the project detail page or project workspace is displayed",
+          "Verify the project name on the detail page matches the one selected from the home page",
+          "Verify key project elements (e.g., project details, tasks, or content area) are loaded"
+        ],
+        "title": "Open a project from the CTT home page after successful login",
+        "type": "positive"
+      }
+    ],
+    "negative_scenarios": []
+  }
+}

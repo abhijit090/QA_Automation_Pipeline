@@ -1,0 +1,80 @@
+{
+  "script_id": "33fe5317",
+  "app_url": "https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+  "username": "testd1051@gmail.com",
+  "suite_name": "login functionlity",
+  "scenarios": {
+    "positive_scenarios": [
+      {
+        "expected_result": "User is successfully authenticated and redirected to the dashboard/home page with their session active",
+        "id": "TC_POS_001",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Verify the login page is displayed with username and password fields visible",
+          "Enter 'testd1051@gmail.com' in the email/username field",
+          "Enter the valid password in the password field",
+          "Click the Login/Submit button",
+          "Verify the user is redirected away from the login page",
+          "Verify the dashboard or home page is displayed",
+          "Verify the authenticated user's name or email is visible in the UI (e.g., in a header or profile section)"
+        ],
+        "title": "Successful login with valid username and password",
+        "type": "positive"
+      },
+      {
+        "expected_result": "URL changes to the authenticated route and the correct page title is displayed with no errors",
+        "id": "TC_POS_002",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Verify the login page URL is correct",
+          "Enter 'testd1051@gmail.com' in the email/username field",
+          "Enter the valid password in the password field",
+          "Click the Login/Submit button",
+          "Verify the URL has changed from the login page URL",
+          "Verify the new page title matches the expected post-login page title",
+          "Verify no error messages are displayed on the page"
+        ],
+        "title": "Successful login and verification of page title/URL after redirect",
+        "type": "positive"
+      }
+    ],
+    "negative_scenarios": [
+      {
+        "expected_result": "Validation error messages are displayed for both empty fields and the user remains on the login page",
+        "id": "TC_NEG_001",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Verify the login page is displayed",
+          "Leave the email/username field empty",
+          "Leave the password field empty",
+          "Click the Login/Submit button",
+          "Verify the user remains on the login page",
+          "Verify an appropriate error message is displayed such as 'Email is required' or 'Username is required'",
+          "Verify no authentication or redirect occurs"
+        ],
+        "title": "Login attempt with empty username and empty password",
+        "type": "negative"
+      },
+      {
+        "expected_result": "An error message indicating invalid credentials is displayed and the user is not authenticated",
+        "id": "TC_NEG_002",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Verify the login page is displayed",
+          "Enter 'testd1051@gmail.com' in the email/username field",
+          "Enter 'WrongPassword123!' in the password field",
+          "Click the Login/Submit button",
+          "Verify the user remains on the login page",
+          "Verify an error message is displayed such as 'Invalid credentials' or 'Incorrect username or password'",
+          "Verify the password field is cleared or remains filled but login is not granted"
+        ],
+        "title": "Login attempt with valid username but incorrect password",
+        "type": "negative"
+      }
+    ]
+  }
+}

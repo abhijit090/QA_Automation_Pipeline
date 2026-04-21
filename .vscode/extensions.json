@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "ms-playwright.playwright",
+    "sakamoto66.vscode-playwright-test-runner",
+    "augment.vscode-augment"
+  ]
+}

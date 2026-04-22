@@ -1,0 +1,44 @@
+{
+  "script_id": "42b997e3",
+  "app_url": "https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+  "username": "testd1051@gmail.com",
+  "suite_name": "Login functionlity",
+  "scenarios": {
+    "positive_scenarios": [
+      {
+        "expected_result": "User is successfully authenticated and redirected to the dashboard/home page with an active session",
+        "id": "TC_POS_001",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Verify the login page is displayed with username and password fields",
+          "Enter 'testd1051@gmail.com' in the username/email field",
+          "Enter the valid password in the password field",
+          "Click the Login/Submit button",
+          "Verify the user is redirected to the home/dashboard page",
+          "Verify the authenticated user session is established (e.g., username or profile icon is visible)"
+        ],
+        "title": "Successful login with valid username and password",
+        "type": "positive"
+      }
+    ],
+    "negative_scenarios": [
+      {
+        "expected_result": "Login is prevented and an error message indicating the username/email field is required is displayed",
+        "id": "TC_NEG_001",
+        "priority": "High",
+        "steps": [
+          "Navigate to https://development.d36z6oo50ky8dh.amplifyapp.com/login",
+          "Verify the login page is displayed",
+          "Leave the username/email field empty",
+          "Enter the valid password in the password field",
+          "Click the Login/Submit button",
+          "Verify no redirection occurs",
+          "Verify an appropriate error message is displayed (e.g., 'Email is required' or 'Username cannot be empty')"
+        ],
+        "title": "Login attempt with empty username/email field",
+        "type": "negative"
+      }
+    ]
+  }
+}

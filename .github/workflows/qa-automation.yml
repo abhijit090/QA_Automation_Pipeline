@@ -309,15 +309,62 @@ jobs:
           echo "============================================="
           if [ "${{ steps.robot_run.outcome }}" = "failure" ]; then
             echo "⚠️  Some tests failed — check the Allure report for details."
-            echo "    This is expected when running against a live app in CI."
-            echo "    Download the rf-output artifact to see detailed logs."
           else
             echo "✅ All tests passed!"
           fi
-          echo "============================================="
           echo ""
           echo "📊 Allure Report:"
           echo "   https://abhijit090.github.io/QA_Automation_Pipeline/allure-report/${{ github.run_number }}/"
           echo ""
           echo "📦 Artifacts: Check the Artifacts section above."
           echo "============================================="
+
+      # Write clickable link in GitHub Actions Job Summary
+      - name: Write Job Summary
+        if: always()
+        run: |
+          echo "## 🤖 QA Automation Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Parse test results
+          python3 - <<'PYEOF' >> $GITHUB_STEP_SUMMARY
+          import xml.etree.ElementTree as ET, glob
+          xmls = glob.glob("reports/output/**/output.xml", recursive=True)
+          if not xmls:
+              xmls = glob.glob("reports/output/output.xml")
+          total_pass = 0
+          total_fail = 0
+          rows = []
+          for xml in xmls:
+              try:
+                  root = ET.parse(xml).getroot()
+                  for t in root.iter("test"):
+                      s = t.find("status")
+                      status = s.get("status", "") if s is not None else ""
+                      name = t.get("name", "")
+                      msg = (s.get("message", "") if s is not None else "")[:100]
+                      icon = "✅" if status == "PASS" else "❌"
+                      rows.append(f"| {icon} {status} | {name} | {msg} |")
+                      if status == "PASS": total_pass += 1
+                      else: total_fail += 1
+              except: pass
+
+          if total_pass + total_fail > 0:
+              rate = round(total_pass / (total_pass + total_fail) * 100, 1)
+              status_icon = "✅" if total_fail == 0 else "⚠️"
+              print(f"### {status_icon} Pass Rate: {rate}% ({total_pass} passed, {total_fail} failed, {total_pass+total_fail} total)")
+              print("")
+              print("| Status | Test Name | Message |")
+              print("|--------|-----------|---------|")
+              for r in rows:
+                  print(r)
+          else:
+              print("### ⚠️ No test results found")
+          PYEOF
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 **[Open Allure Report](https://abhijit090.github.io/QA_Automation_Pipeline/allure-report/${{ github.run_number }}/)** ← Click to view detailed report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📦 **Download artifacts** from the Artifacts section below for RF logs and screenshots." >> $GITHUB_STEP_SUMMARY

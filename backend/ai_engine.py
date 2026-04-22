@@ -224,15 +224,20 @@ Logout From Application
     Log    Logout complete.    level=INFO
 
 Confirm Logout Popup
-    [Documentation]    Clicks Yes on the logout confirmation popup.
-    ${f}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://button[normalize-space(.)='Yes' or normalize-space(.)='YES']    timeout=10s
+    [Documentation]    Clicks YES on the MUI logout confirmation dialog.
+    ${f}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://button[normalize-space(.)='YES']    timeout=10s
     IF    ${f}
-        Click Element    xpath://button[normalize-space(.)='Yes' or normalize-space(.)='YES']
+        Click Element    xpath://button[normalize-space(.)='YES']
         RETURN
     END
-    ${f}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://button[normalize-space(.)='OK' or normalize-space(.)='Confirm']    timeout=3s
+    ${f}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://button[normalize-space(.)='Yes']    timeout=3s
     IF    ${f}
-        Click Element    xpath://button[normalize-space(.)='OK' or normalize-space(.)='Confirm']
+        Click Element    xpath://button[normalize-space(.)='Yes']
+        RETURN
+    END
+    ${f}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://div[contains(@class,'MuiDialog')]//button[last()]    timeout=3s
+    IF    ${f}
+        Click Element    xpath://div[contains(@class,'MuiDialog')]//button[last()]
         RETURN
     END
     Log    No logout confirmation popup detected    level=WARN
@@ -243,15 +248,15 @@ Click User Avatar
     Click Element    xpath://button[@aria-label='Profile']
 
 Click Logout Option
-    [Documentation]    Clicks the logout text in the dropdown.
-    ${f}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://p[normalize-space(.)='logout']    timeout=5s
+    [Documentation]    Clicks the 'logout' menu item (li) in the MUI dropdown.
+    ${f}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://li[normalize-space(.)='logout']    timeout=5s
     IF    ${f}
-        Click Element    xpath://p[normalize-space(.)='logout']
+        Click Element    xpath://li[normalize-space(.)='logout']
         RETURN
     END
-    ${f}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://*[normalize-space(.)='logout' or normalize-space(.)='Logout' or normalize-space(.)='Log Out' or normalize-space(.)='Sign Out']    timeout=5s
+    ${f}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://*[@role='menuitem' and contains(normalize-space(.),'logout')]    timeout=3s
     IF    ${f}
-        Click Element    xpath://*[normalize-space(.)='logout' or normalize-space(.)='Logout' or normalize-space(.)='Log Out' or normalize-space(.)='Sign Out']
+        Click Element    xpath://*[@role='menuitem' and contains(normalize-space(.),'logout')]
         RETURN
     END
     Fail    Could not locate logout option

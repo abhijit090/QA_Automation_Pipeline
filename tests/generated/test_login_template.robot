@@ -229,51 +229,51 @@ Click Profile Icon
     Log    Clicked Profile icon    level=INFO
 
 Click Logout Text
-    [Documentation]    Clicks the 'logout' text in the dropdown after Profile icon is clicked.
-    ${found}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://p[normalize-space(.)='logout']    timeout=5s
+    [Documentation]    Clicks the 'logout' menu item in the dropdown after Profile icon is clicked.
+    ${found}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://li[normalize-space(.)='logout']    timeout=5s
     IF    ${found}
-        Click Element    xpath://p[normalize-space(.)='logout']
-        Log    Clicked logout    level=INFO
+        Click Element    xpath://li[normalize-space(.)='logout']
+        Log    Clicked logout menu item    level=INFO
         RETURN
     END
-    ${found}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://*[normalize-space(.)='logout' or normalize-space(.)='Logout' or normalize-space(.)='Log Out' or normalize-space(.)='Sign Out']    timeout=5s
+    ${found}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://li[contains(normalize-space(.),'logout') or contains(normalize-space(.),'Logout')]    timeout=3s
     IF    ${found}
-        Click Element    xpath://*[normalize-space(.)='logout' or normalize-space(.)='Logout' or normalize-space(.)='Log Out' or normalize-space(.)='Sign Out']
+        Click Element    xpath://li[contains(normalize-space(.),'logout') or contains(normalize-space(.),'Logout')]
+        RETURN
+    END
+    ${found}=    Run Keyword And Return Status    Wait Until Element Is Visible    xpath://*[@role='menuitem' and contains(normalize-space(.),'logout')]    timeout=3s
+    IF    ${found}
+        Click Element    xpath://*[@role='menuitem' and contains(normalize-space(.),'logout')]
         RETURN
     END
     Fail    Could not find logout option in the dropdown
 
 Confirm Logout Popup
-    [Documentation]    Clicks 'Yes' on the logout confirmation popup/dialog.
+    [Documentation]    Clicks 'YES' on the MUI logout confirmation dialog.
+    ...                Dialog title: 'Logout Prompt', text: 'Are you sure you want to logout?'
+    ...                Buttons: NO and YES
     ${yes_found}=    Run Keyword And Return Status
-    ...    Wait Until Element Is Visible    xpath://button[normalize-space(.)='Yes']    timeout=10s
-    IF    ${yes_found}
-        Click Element    xpath://button[normalize-space(.)='Yes']
-        Log    Clicked Yes on logout confirmation popup    level=INFO
-        RETURN
-    END
-    ${yes_found}=    Run Keyword And Return Status
-    ...    Wait Until Element Is Visible    xpath://button[normalize-space(.)='YES']    timeout=3s
+    ...    Wait Until Element Is Visible    xpath://button[normalize-space(.)='YES']    timeout=10s
     IF    ${yes_found}
         Click Element    xpath://button[normalize-space(.)='YES']
-        Log    Clicked YES on logout confirmation popup    level=INFO
+        Log    Clicked YES on logout confirmation dialog    level=INFO
         RETURN
     END
-    ${ok_found}=    Run Keyword And Return Status
-    ...    Wait Until Element Is Visible    xpath://button[normalize-space(.)='OK' or normalize-space(.)='Ok' or normalize-space(.)='Confirm']    timeout=3s
-    IF    ${ok_found}
-        Click Element    xpath://button[normalize-space(.)='OK' or normalize-space(.)='Ok' or normalize-space(.)='Confirm']
-        Log    Clicked OK/Confirm on logout popup    level=INFO
+    ${yes_found}=    Run Keyword And Return Status
+    ...    Wait Until Element Is Visible    xpath://button[normalize-space(.)='Yes']    timeout=3s
+    IF    ${yes_found}
+        Click Element    xpath://button[normalize-space(.)='Yes']
+        Log    Clicked Yes on logout confirmation dialog    level=INFO
         RETURN
     END
-    ${dialog_btn}=    Run Keyword And Return Status
-    ...    Wait Until Element Is Visible    xpath://div[contains(@class,'MuiDialog')]//button[normalize-space(.)='Yes' or normalize-space(.)='YES' or normalize-space(.)='Ok' or normalize-space(.)='OK' or normalize-space(.)='Confirm']    timeout=3s
-    IF    ${dialog_btn}
-        Click Element    xpath://div[contains(@class,'MuiDialog')]//button[normalize-space(.)='Yes' or normalize-space(.)='YES' or normalize-space(.)='Ok' or normalize-space(.)='OK' or normalize-space(.)='Confirm']
-        Log    Clicked confirm button in MUI dialog    level=INFO
+    ${yes_found}=    Run Keyword And Return Status
+    ...    Wait Until Element Is Visible    xpath://div[contains(@class,'MuiDialog')]//button[last()]    timeout=3s
+    IF    ${yes_found}
+        Click Element    xpath://div[contains(@class,'MuiDialog')]//button[last()]
+        Log    Clicked last button in MUI dialog    level=INFO
         RETURN
     END
-    Log    No logout confirmation popup detected — logout may have completed directly    level=WARN
+    Log    No logout confirmation popup detected    level=WARN
 
 Capture Failure Screenshot
     Create Directory    ${SCREENSHOT_DIR}

@@ -310,33 +310,48 @@ _REQUIRED_KEYWORDS = [
 
 
 def _fix_known_locators(script: str) -> str:
-    """Force-correct known locator issues in generated scripts.
-    
-    - Replaces button[type=submit] in Click Login Button with type=button
-    - Ensures Fill Username uses id:username with proper timeout
-    - Ensures Fill Password uses id:password with proper timeout
-    - Removes Element Should Contain Value checks after typing
-    """
-    # Fix: Never click button[type=submit] for login - that's SINGLE SIGN IN
-    # Replace any Wait.*Enabled.*button.*submit with the correct LOGIN button
-    import re
-    script = re.sub(
-        r'Wait Until Keyword Succeeds.*Element Should Be Enabled\s+css:button\[type="submit"\]',
-        "Wait Until Element Is Enabled    xpath://button[@type='button' and (normalize-space(.)='LOGIN' or normalize-space(.)='Login')]    timeout=15s",
-        script
-    )
-    
-    # Remove Element Should Contain Value lines (causes false failures with MUI)
-    lines = script.splitlines()
-    fixed_lines = []
-    for line in lines:
-        if 'Element Should Contain Value' in line:
+    """Force-correct known issues in AI-generated .robot scripts."""
+    import re as _re
+
+    out = []
+    for line in script.splitlines():
+        s = line.strip()
+
+        # 1. Remove invalid 'Suite Name' setting (not valid in RF)
+        if s.lower().startswith("suite name"):
             continue
-        if 'Element Should Not Be Empty' in line and 'locator' in line.lower():
+
+        # 2. Replace button[type=submit] with button[type=button] for LOGIN
+        if 'css:button[type="submit"]' in line:
+            if "Wait Until" in line or "Element Should Be Enabled" in line:
+                line = line.replace(
+                    'css:button[type="submit"]',
+                    "xpath://button[@type='button' and (normalize-space(.)='LOGIN' or normalize-space(.)='Login')]"
+                )
+
+        # 3. Fix 'Location Should Not Contain' (doesn't exist in SeleniumLibrary)
+        if "Location Should Not Contain" in line:
+            m = _re.search(r"Location Should Not Contain\s+(.+)", line)
+            if m:
+                arg = m.group(1).strip()
+                indent = len(line) - len(line.lstrip())
+                out.append(" " * indent + "${_url}=    Get Location")
+                line = " " * indent + "Should Not Contain    ${_url}    " + arg
+
+        # 4. Fix screenshot timestamp — colons not allowed on Windows
+        if "strftime" in line:
+            line = line.replace("%H:%M:%S", "%H%M%S")
+            line = line.replace("%Y-%m-%d %H", "%Y%m%d_%H")
+
+        # 5. Remove Element Should Contain Value (MUI false failures)
+        if "Element Should Contain Value" in s:
             continue
-        fixed_lines.append(line)
-    
-    return "\n".join(fixed_lines)
+        if "Element Should Not Be Empty" in s and "locator" in s.lower():
+            continue
+
+        out.append(line)
+
+    return "\n".join(out)
 
 
 def _ensure_required_keywords(script: str) -> str:

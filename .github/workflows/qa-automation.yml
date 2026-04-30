@@ -76,6 +76,17 @@ jobs:
       pages: write
       id-token: write
 
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+      JIRA_USERNAME: ${{ secrets.JIRA_USERNAME }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+      JIRA_BOARD_ID: ${{ secrets.JIRA_BOARD_ID }}
+      TEST_BASE_URL: ${{ secrets.TEST_BASE_URL }}
+      TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
+      TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -118,13 +129,13 @@ jobs:
       - name: Write .env file
         run: |
           cat > .env <<EOF
-          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
           AI_MODEL=claude-sonnet-4-6
-          JIRA_BASE_URL=${{ secrets.JIRA_BASE_URL }}
-          JIRA_USERNAME=${{ secrets.JIRA_USERNAME }}
-          JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }}
-          JIRA_PROJECT_KEY=${{ secrets.JIRA_PROJECT_KEY }}
-          JIRA_BOARD_ID=${{ secrets.JIRA_BOARD_ID }}
+          JIRA_BASE_URL=${JIRA_BASE_URL}
+          JIRA_USERNAME=${JIRA_USERNAME}
+          JIRA_API_TOKEN=${JIRA_API_TOKEN}
+          JIRA_PROJECT_KEY=${JIRA_PROJECT_KEY}
+          JIRA_BOARD_ID=${JIRA_BOARD_ID}
           EOF
 
       # ── Resolve all variables with proper fallback chain ──
@@ -135,18 +146,18 @@ jobs:
           SCRIPT="${{ github.event.inputs.test_script }}"
           SCRIPT="${SCRIPT:-${{ env.DEFAULT_SCRIPT }}}"
 
-          # URL: manual input → secret → default
+          # URL: manual input → secret (env) → default
           URL="${{ github.event.inputs.base_url }}"
-          URL="${URL:-${{ secrets.TEST_BASE_URL }}}"
+          URL="${URL:-${TEST_BASE_URL}}"
           URL="${URL:-${{ env.DEFAULT_BASE_URL }}}"
 
-          # Username: manual input → secret → empty (will skip login)
+          # Username: manual input → secret (env) → empty
           USER="${{ github.event.inputs.username }}"
-          USER="${USER:-${{ secrets.TEST_USERNAME }}}"
+          USER="${USER:-${TEST_USERNAME}}"
 
-          # Password: manual input → secret → empty
+          # Password: manual input → secret (env) → empty
           PASS="${{ github.event.inputs.password }}"
-          PASS="${PASS:-${{ secrets.TEST_PASSWORD }}}"
+          PASS="${PASS:-${TEST_PASSWORD}}"
 
           # Browser & headless
           BROWSER="${{ github.event.inputs.browser }}"

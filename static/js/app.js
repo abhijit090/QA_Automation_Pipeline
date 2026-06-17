@@ -835,3 +835,90 @@ function escHtml(str) {
 function escAttr(str) {
   return String(str).replace(/'/g, "\\'").replace(/"/g, "&quot;");
 }
+
+
+// ═══════════════════════════════════════════════════════════
+// FETCH JIRA TICKET BY KEY & AUTO-GENERATE SCENARIOS
+// ═══════════════════════════════════════════════════════════
+async function fetchTicketAndGenerate() {
+  const ticketKey = $("ticketKey").value.trim();
+  if (!ticketKey) {
+    toast("Enter a Jira ticket key (e.g. AS-33)", "error");
+    $("ticketKey").focus();
+    return;
+  }
+
+  const jiraUrl   = $("jiraUrl") ? $("jiraUrl").value.trim() : "";
+  const jiraUser  = $("jiraUsername") ? $("jiraUsername").value.trim() : "";
+  const jiraToken = $("jiraToken") ? $("jiraToken").value.trim() : "";
+  const apiKey    = $("apiKey").value.trim();
+  const appUrl    = $("appUrl").value.trim();
+  const username  = $("username").value.trim();
+  const password  = $("password").value.trim();
+
+  showOverlay(`Fetching ticket ${ticketKey} from Jira & generating scenarios…`);
+  setStatus(`Fetching ${ticketKey}…`, "working");
+
+  try {
+    const res = await fetch("/api/jira/fetch-ticket-by-key", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ticket_key: ticketKey,
+        jira_url: jiraUrl,
+        username: jiraUser,
+        api_token: jiraToken,
+        api_key: apiKey,
+        app_url: appUrl,
+        test_username: username,
+        test_password: password,
+      }),
+    });
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.error || "Failed to fetch ticket");
+
+    // Fill the description field with ticket details
+    const ticket = data.ticket;
+    let descText = `${ticket.id}: ${ticket.summary}`;
+    if (ticket.acceptance_criteria) {
+      descText += `\n\nAcceptance Criteria:\n${ticket.acceptance_criteria}`;
+    } else if (ticket.description) {
+      descText += `\n\nDescription:\n${ticket.description}`;
+    }
+    $("description").value = descText;
+
+    // If scenarios were generated, render them
+    if (data.scenarios) {
+      const sc = data.scenarios;
+      const all = [
+        ...(sc.positive_scenarios || []).map(s => ({ ...s, type: "positive" })),
+        ...(sc.negative_scenarios || []).map(s => ({ ...s, type: "negative" })),
+      ];
+
+      state.scenarios    = all;
+      state.scenariosRaw = sc;
+      state.selectedIds  = new Set(all.map(s => s.id));
+
+      renderScenarios(all, sc.enhanced_description || "");
+      switchTab("scenarios", qs('[data-tab="scenarios"]'));
+      $("btnGenScript").disabled = false;
+
+      toast(
+        `🎫 Ticket ${ticket.id} loaded! Generated ${all.length} scenarios ` +
+        `(${(sc.positive_scenarios||[]).length}✅ + ${(sc.negative_scenarios||[]).length}❌).`,
+        "success", 6000
+      );
+      setStatus(`${ticket.id} — ${all.length} scenarios ready`, "success");
+    } else {
+      toast(`Ticket ${ticket.id} loaded. Click Generate Scenarios to create test cases.`, "info", 5000);
+      setStatus(`${ticket.id} loaded`, "success");
+    }
+
+  } catch (err) {
+    setStatus("Error", "error");
+    toast(`Failed: ${err.message}`, "error", 6000);
+  } finally {
+    hideOverlay();
+  }
+}

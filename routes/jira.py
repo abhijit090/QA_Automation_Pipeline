@@ -14,6 +14,82 @@ from backend.jira_client import get_jira_client
 jira_bp = Blueprint("jira", __name__)
 
 
+@jira_bp.route("/fetch-ticket-by-key", methods=["POST"])
+def fetch_ticket_by_key():
+    """Fetch a single Jira ticket by key and auto-generate scenarios.
+
+    Request JSON:
+        ticket_key  : str  — e.g. "AS-33" (required)
+        jira_url    : str
+        username    : str
+        api_token   : str
+        api_key     : str  — Anthropic key for scenario generation
+        app_url     : str  — application URL for test scenarios
+    """
+    data = request.get_json(force=True, silent=True) or {}
+
+    ticket_key  = data.get("ticket_key", "").strip()
+    jira_url    = (data.get("jira_url")    or config.JIRA_BASE_URL).strip()
+    username    = (data.get("username")    or config.JIRA_USERNAME).strip()
+    api_token   = (data.get("api_token")   or config.JIRA_API_TOKEN).strip()
+    api_key     = (data.get("api_key")     or config.ANTHROPIC_API_KEY).strip()
+    app_url     = data.get("app_url", "").strip()
+
+    if not ticket_key:
+        return jsonify({"success": False, "error": "ticket_key is required (e.g. AS-33)"}), 400
+
+    if not (jira_url and username and api_token):
+        return jsonify(
+            {"success": False, "error": "Jira credentials required. Fill Jira URL, username, and API token."}
+        ), 400
+
+    try:
+        from backend.ai_engine import generate_scenarios
+
+        # Step 1: Fetch ticket from Jira
+        client = get_jira_client(jira_url, username, api_token)
+        ticket = client.get_issue_by_key(ticket_key)
+
+        # Step 2: Build description from ticket details
+        desc_parts = []
+        desc_parts.append(f"Ticket: {ticket['id']} - {ticket['summary']}")
+        if ticket.get("description"):
+            desc_parts.append(f"Description: {ticket['description']}")
+        if ticket.get("acceptance_criteria"):
+            desc_parts.append(f"Acceptance Criteria: {ticket['acceptance_criteria']}")
+        full_description = "\n".join(desc_parts)
+
+        # Step 3: Auto-generate scenarios using AI
+        scenarios = None
+        if api_key:
+            try:
+                scenarios = generate_scenarios(
+                    app_url=app_url,
+                    description=full_description,
+                    username=data.get("test_username", ""),
+                    password=data.get("test_password", ""),
+                    api_key=api_key,
+                )
+            except Exception as ai_err:
+                scenarios = None
+                ticket["ai_error"] = str(ai_err)
+
+        return jsonify({
+            "success": True,
+            "ticket": ticket,
+            "scenarios": scenarios,
+            "description_used": full_description,
+        })
+
+    except requests.exceptions.HTTPError as http_err:
+        status_code = http_err.response.status_code if http_err.response else 500
+        if status_code == 404:
+            return jsonify({"success": False, "error": f"Ticket '{ticket_key}' not found in Jira."}), 404
+        return jsonify({"success": False, "error": f"Jira error: {http_err}"}), status_code
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
 @jira_bp.route("/fetch-tickets", methods=["POST"])
 def fetch_tickets():
     """Fetch Done tickets from the current Jira sprint.

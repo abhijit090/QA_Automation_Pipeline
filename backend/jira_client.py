@@ -57,6 +57,63 @@ class JiraClient:
 
     # ── Read ──────────────────────────────────────────────────
 
+    def get_issue_by_key(self, issue_key: str) -> Dict:
+        """Fetch a single Jira issue by its key (e.g. AS-33).
+
+        Returns a dict with id, summary, description, acceptance_criteria,
+        status, labels, priority, type, assignee.
+        """
+        resp = self._session.get(
+            f"{self.base_url}/rest/api/2/issue/{issue_key}",
+            params={
+                "fields": "summary,description,status,labels,issuetype,priority,assignee,comment,customfield_10016,customfield_10017,customfield_10020",
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+
+        raw = resp.json()
+        f = raw.get("fields", {})
+
+        description = f.get("description") or ""
+        if isinstance(description, dict):
+            description = self._adf_to_text(description)
+
+        # Try to extract Acceptance Criteria from common custom fields or description
+        acceptance_criteria = ""
+        # Check common AC custom field names
+        for cf in ["customfield_10016", "customfield_10017", "customfield_10020"]:
+            val = f.get(cf)
+            if val:
+                if isinstance(val, dict):
+                    acceptance_criteria = self._adf_to_text(val)
+                elif isinstance(val, str):
+                    acceptance_criteria = val
+                break
+
+        # If no custom field, try to extract AC from description
+        if not acceptance_criteria and description:
+            import re
+            ac_match = re.search(
+                r'(?:acceptance criteria|AC|given|scenario)[:\s]*(.*)',
+                description,
+                re.IGNORECASE | re.DOTALL
+            )
+            if ac_match:
+                acceptance_criteria = ac_match.group(1).strip()[:2000]
+
+        return {
+            "id":                  raw.get("key", ""),
+            "summary":             f.get("summary", ""),
+            "description":         description,
+            "acceptance_criteria": acceptance_criteria,
+            "status":              (f.get("status") or {}).get("name", ""),
+            "labels":              f.get("labels", []),
+            "priority":            (f.get("priority") or {}).get("name", "Medium"),
+            "type":                (f.get("issuetype") or {}).get("name", ""),
+            "assignee":            (f.get("assignee") or {}).get("displayName", "Unassigned"),
+        }
+
     def get_current_sprint_issues(
         self,
         project_key: str | None = None,

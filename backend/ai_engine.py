@@ -27,14 +27,59 @@ def _get_client(api_key: str | None = None) -> anthropic.Anthropic:
 
 
 def _extract_json(text: str) -> Dict:
+    """Extract JSON from AI response, with repair for common issues."""
+    # Try direct parse first
     try:
         return json.loads(text)
     except json.JSONDecodeError:
         pass
-    match = re.search(r"\{[\s\S]*\}", text)
+
+    # Strip markdown fences if present
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        lines = cleaned.splitlines()
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        cleaned = "\n".join(lines).strip()
+
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    # Extract the outermost JSON object
+    match = re.search(r"\{[\s\S]*\}", cleaned)
     if match:
-        return json.loads(match.group())
-    raise ValueError("No valid JSON found in AI response.")
+        json_str = match.group()
+        try:
+            return json.loads(json_str)
+        except json.JSONDecodeError:
+            # Try to repair common AI JSON issues
+            json_str = _repair_json(json_str)
+            try:
+                return json.loads(json_str)
+            except json.JSONDecodeError:
+                pass
+
+    raise ValueError("No valid JSON found in AI response. The AI may have returned malformed output — try again.")
+
+
+def _repair_json(text: str) -> str:
+    """Attempt to fix common JSON issues from AI responses."""
+    # Remove trailing commas before } or ]
+    text = re.sub(r",\s*([}\]])", r"\1", text)
+    # Fix single quotes to double quotes (but not inside strings)
+    # Replace unescaped newlines inside strings
+    text = re.sub(r"(?<=: )'([^']*)'", r'"\1"', text)
+    # Remove control characters
+    text = re.sub(r"[\x00-\x1f]+", " ", text)
+    # Fix missing commas between array items (} followed by {)
+    text = re.sub(r"\}\s*\{", "},{", text)
+    # Fix missing commas between string values ("..." "...")
+    text = re.sub(r'}\s*{', '},{', text)
+    return text
 
 
 def _fix_rf7_syntax(script: str) -> str:

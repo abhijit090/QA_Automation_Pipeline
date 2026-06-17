@@ -86,24 +86,63 @@ def _extract_json(text: str) -> Dict:
             except json.JSONDecodeError:
                 pass
 
+    # Nuclear option: try to force-parse by truncating at the last valid closing brace
+    try:
+        # Find all } positions and try parsing from start to each one
+        for i in range(len(cleaned) - 1, 0, -1):
+            if cleaned[i] == '}':
+                candidate = cleaned[brace_start:i+1] if 'brace_start' in dir() else cleaned[:i+1]
+                try:
+                    return json.loads(candidate)
+                except json.JSONDecodeError:
+                    repaired = _repair_json(candidate)
+                    try:
+                        return json.loads(repaired)
+                    except json.JSONDecodeError:
+                        continue
+    except Exception:
+        pass
+
     raise ValueError("No valid JSON found in AI response. The AI may have returned malformed output — try again.")
 
 
 def _repair_json(text: str) -> str:
     """Attempt to fix common JSON issues from AI responses."""
+    import re as _re
     # Remove trailing commas before } or ]
-    text = re.sub(r",\s*([}\]])", r"\1", text)
-    # Fix single quotes to double quotes (but not inside strings)
-    # Replace unescaped newlines inside strings
-    text = re.sub(r"(?<=: )'([^']*)'", r'"\1"', text)
-    # Remove control characters
-    text = re.sub(r"[\x00-\x1f]+", " ", text)
+    text = _re.sub(r',\s*([}\]])', r'\1', text)
+    # Remove control characters except newlines and tabs
+    text = _re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]+', ' ', text)
     # Fix missing commas between array items (} followed by {)
-    text = re.sub(r"\}\s*\{", "},{", text)
-    # Fix missing commas between string values ("..." "...")
-    text = re.sub(r'}\s*{', '},{', text)
-    return text
-
+    text = _re.sub(r'}\s*{', '},{', text)
+    # Replace unescaped literal newlines inside string values
+    # This handles cases where AI puts real newlines in JSON strings
+    result = []
+    in_string = False
+    escape_next = False
+    for ch in text:
+        if escape_next:
+            result.append(ch)
+            escape_next = False
+            continue
+        if ch == '\\':
+            escape_next = True
+            result.append(ch)
+            continue
+        if ch == '"':
+            in_string = not in_string
+            result.append(ch)
+            continue
+        if in_string and ch == '\n':
+            result.append('\\n')
+            continue
+        if in_string and ch == '\r':
+            continue
+        if in_string and ch == '\t':
+            result.append('\\t')
+            continue
+        result.append(ch)
+    return ''.join(result)
 
 def _fix_rf7_syntax(script: str) -> str:
     """Post-process generated .robot scripts for RF 7.x compliance.

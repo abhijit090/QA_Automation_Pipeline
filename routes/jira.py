@@ -6,6 +6,7 @@ POST /api/jira/test-connection — verify Jira credentials
 """
 
 from flask import Blueprint, jsonify, request
+import requests as req_lib
 
 import config
 from backend.ai_engine import enhance_jira_scenario
@@ -76,7 +77,7 @@ def fetch_ticket_by_key():
             "description_used": ai_input,
         })
 
-    except requests.exceptions.HTTPError as http_err:
+    except req_lib.exceptions.HTTPError as http_err:
         status_code = http_err.response.status_code if http_err.response else 500
         if status_code == 404:
             return jsonify({"success": False, "error": f"Ticket '{ticket_key}' not found in Jira."}), 404

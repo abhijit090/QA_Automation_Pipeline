@@ -848,15 +848,11 @@ async function fetchTicketAndGenerate() {
     return;
   }
 
-  const jiraUrl   = $("jiraUrl") ? $("jiraUrl").value.trim() : "";
-  const jiraUser  = $("jiraUsername") ? $("jiraUsername").value.trim() : "";
-  const jiraToken = $("jiraToken") ? $("jiraToken").value.trim() : "";
-  const apiKey    = $("apiKey").value.trim();
   const appUrl    = $("appUrl").value.trim();
   const username  = $("username").value.trim();
   const password  = $("password").value.trim();
 
-  showOverlay(`Fetching ticket ${ticketKey} from Jira & generating scenarios…`);
+  showOverlay(`Fetching ticket ${ticketKey} & generating scenarios…`);
   setStatus(`Fetching ${ticketKey}…`, "working");
 
   try {
@@ -865,10 +861,6 @@ async function fetchTicketAndGenerate() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ticket_key: ticketKey,
-        jira_url: jiraUrl,
-        username: jiraUser,
-        api_token: jiraToken,
-        api_key: apiKey,
         app_url: appUrl,
         test_username: username,
         test_password: password,
@@ -905,13 +897,13 @@ async function fetchTicketAndGenerate() {
       $("btnGenScript").disabled = false;
 
       toast(
-        `🎫 Ticket ${ticket.id} loaded! Generated ${all.length} scenarios ` +
+        `🎫 ${ticket.id} loaded! ${all.length} scenarios generated ` +
         `(${(sc.positive_scenarios||[]).length}✅ + ${(sc.negative_scenarios||[]).length}❌).`,
         "success", 6000
       );
       setStatus(`${ticket.id} — ${all.length} scenarios ready`, "success");
     } else {
-      toast(`Ticket ${ticket.id} loaded. Click Generate Scenarios to create test cases.`, "info", 5000);
+      toast(`${ticket.id} loaded. Click Generate Scenarios to create test cases.`, "info", 5000);
       setStatus(`${ticket.id} loaded`, "success");
     }
 

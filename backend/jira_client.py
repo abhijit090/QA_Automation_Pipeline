@@ -60,14 +60,25 @@ class JiraClient:
     def get_issue_by_key(self, issue_key: str) -> Dict:
         """Fetch a single Jira issue by its key (e.g. AS-33).
 
-        Returns a dict with id, summary, description, acceptance_criteria,
-        status, labels, priority, type, assignee.
+        Uses JIRA_AC_FIELD_MAP from config to find the correct AC custom field
+        based on the project key prefix.
         """
+        # Determine project key from issue key (e.g. AS-33 -> AS)
+        project_prefix = issue_key.split("-")[0] if "-" in issue_key else ""
+
+        # Get the AC custom field for this project
+        ac_field = config.JIRA_AC_FIELD_MAP.get(project_prefix, "")
+        if not ac_field:
+            ac_field = config.JIRA_ACCEPTANCE_CRITERIA_FIELD
+
+        # Build fields list
+        fields = "summary,description,status,labels,issuetype,priority,assignee"
+        if ac_field:
+            fields += f",{ac_field}"
+
         resp = self._session.get(
             f"{self.base_url}/rest/api/2/issue/{issue_key}",
-            params={
-                "fields": "summary,description,status,labels,issuetype,priority,assignee,comment,customfield_10016,customfield_10017,customfield_10020",
-            },
+            params={"fields": fields},
             timeout=15,
         )
         resp.raise_for_status()
@@ -79,19 +90,17 @@ class JiraClient:
         if isinstance(description, dict):
             description = self._adf_to_text(description)
 
-        # Try to extract Acceptance Criteria from common custom fields or description
+        # Extract Acceptance Criteria from the mapped custom field
         acceptance_criteria = ""
-        # Check common AC custom field names
-        for cf in ["customfield_10016", "customfield_10017", "customfield_10020"]:
-            val = f.get(cf)
+        if ac_field:
+            val = f.get(ac_field)
             if val:
                 if isinstance(val, dict):
                     acceptance_criteria = self._adf_to_text(val)
                 elif isinstance(val, str):
                     acceptance_criteria = val
-                break
 
-        # If no custom field, try to extract AC from description
+        # Fallback: try to extract AC from description text
         if not acceptance_criteria and description:
             import re
             ac_match = re.search(

@@ -15,11 +15,22 @@ AI_MODEL: str = os.getenv("AI_MODEL") or os.getenv("CLAUDE_MODEL") or "claude-so
 
 # ─── Jira ────────────────────────────────────────────────────
 JIRA_BASE_URL: str = os.getenv("JIRA_BASE_URL", "")
-JIRA_USERNAME: str = os.getenv("JIRA_USERNAME", "")
+JIRA_USERNAME: str = os.getenv("JIRA_USERNAME", "") or os.getenv("JIRA_EMAIL", "")
 JIRA_API_TOKEN: str = os.getenv("JIRA_API_TOKEN", "")
 JIRA_PROJECT_KEY: str = os.getenv("JIRA_PROJECT_KEY", "")
 JIRA_BOARD_ID: str = os.getenv("JIRA_BOARD_ID", "")
 JIRA_ENABLED: bool = bool(JIRA_BASE_URL and JIRA_API_TOKEN)
+
+# Jira AC field mapping per project key (JSON from .env)
+JIRA_AC_FIELD_MAP: dict = {}
+try:
+    import json as _json
+    _ac_raw = os.getenv("JIRA_AC_FIELD_MAP", "")
+    if _ac_raw:
+        JIRA_AC_FIELD_MAP = _json.loads(_ac_raw)
+except Exception:
+    pass
+JIRA_ACCEPTANCE_CRITERIA_FIELD: str = os.getenv("JIRA_ACCEPTANCE_CRITERIA_FIELD", "")
 
 # ─── Flask ───────────────────────────────────────────────────
 SECRET_KEY: str = os.getenv("SECRET_KEY", "qa-automation-2024-secret")

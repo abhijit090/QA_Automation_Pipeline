@@ -19,59 +19,54 @@ def fetch_ticket_by_key():
     """Fetch a single Jira ticket by key and auto-generate scenarios.
 
     Request JSON:
-        ticket_key  : str  — e.g. "AS-33" (required)
-        jira_url    : str
-        username    : str
-        api_token   : str
-        api_key     : str  — Anthropic key for scenario generation
-        app_url     : str  — application URL for test scenarios
+        ticket_key    : str  — e.g. "AS-33" (ONLY required field)
+        app_url       : str  — optional, for scenario generation context
+        test_username : str  — optional, for login scenario steps
+        test_password : str  — optional, for login scenario steps
+
+    All Jira credentials and API keys come from .env — nothing else needed from UI.
     """
     data = request.get_json(force=True, silent=True) or {}
 
-    ticket_key  = data.get("ticket_key", "").strip()
-    jira_url    = (data.get("jira_url")    or config.JIRA_BASE_URL).strip()
-    username    = (data.get("username")    or config.JIRA_USERNAME).strip()
-    api_token   = (data.get("api_token")   or config.JIRA_API_TOKEN).strip()
-    api_key     = (data.get("api_key")     or config.ANTHROPIC_API_KEY).strip()
-    app_url     = data.get("app_url", "").strip()
+    ticket_key = data.get("ticket_key", "").strip()
+    app_url    = data.get("app_url", "").strip()
 
     if not ticket_key:
-        return jsonify({"success": False, "error": "ticket_key is required (e.g. AS-33)"}), 400
+        return jsonify({"success": False, "error": "Enter a ticket key (e.g. AS-33)"}), 400
 
-    if not (jira_url and username and api_token):
-        return jsonify(
-            {"success": False, "error": "Jira credentials required. Fill Jira URL, username, and API token."}
-        ), 400
+    # All credentials from .env / config — nothing from UI
+    if not (config.JIRA_BASE_URL and config.JIRA_USERNAME and config.JIRA_API_TOKEN):
+        return jsonify({
+            "success": False,
+            "error": "Jira not configured. Add JIRA_BASE_URL, JIRA_EMAIL, and JIRA_API_TOKEN to .env file."
+        }), 400
 
     try:
         from backend.ai_engine import generate_scenarios
 
-        # Step 1: Fetch ticket from Jira
-        client = get_jira_client(jira_url, username, api_token)
+        # Step 1: Fetch ticket from Jira using .env credentials
+        client = get_jira_client()
         ticket = client.get_issue_by_key(ticket_key)
 
         # Step 2: Build description from ticket details
-        desc_parts = []
-        desc_parts.append(f"Ticket: {ticket['id']} - {ticket['summary']}")
-        if ticket.get("description"):
-            desc_parts.append(f"Description: {ticket['description']}")
+        desc_parts = [f"Ticket: {ticket['id']} - {ticket['summary']}"]
         if ticket.get("acceptance_criteria"):
-            desc_parts.append(f"Acceptance Criteria: {ticket['acceptance_criteria']}")
-        full_description = "\n".join(desc_parts)
+            desc_parts.append(f"Acceptance Criteria:\n{ticket['acceptance_criteria']}")
+        if ticket.get("description"):
+            desc_parts.append(f"Description:\n{ticket['description']}")
+        full_description = "\n\n".join(desc_parts)
 
-        # Step 3: Auto-generate scenarios using AI
+        # Step 3: Auto-generate scenarios using AI (from .env ANTHROPIC_API_KEY)
         scenarios = None
-        if api_key:
+        if config.ANTHROPIC_API_KEY:
             try:
                 scenarios = generate_scenarios(
                     app_url=app_url,
                     description=full_description,
                     username=data.get("test_username", ""),
                     password=data.get("test_password", ""),
-                    api_key=api_key,
                 )
             except Exception as ai_err:
-                scenarios = None
                 ticket["ai_error"] = str(ai_err)
 
         return jsonify({
@@ -85,6 +80,8 @@ def fetch_ticket_by_key():
         status_code = http_err.response.status_code if http_err.response else 500
         if status_code == 404:
             return jsonify({"success": False, "error": f"Ticket '{ticket_key}' not found in Jira."}), 404
+        if status_code == 401:
+            return jsonify({"success": False, "error": "Jira authentication failed. Check JIRA_API_TOKEN in .env."}), 401
         return jsonify({"success": False, "error": f"Jira error: {http_err}"}), status_code
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500

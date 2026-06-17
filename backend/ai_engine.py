@@ -49,17 +49,40 @@ def _extract_json(text: str) -> Dict:
     except json.JSONDecodeError:
         pass
 
-    # Extract the outermost JSON object
-    match = re.search(r"\{[\s\S]*\}", cleaned)
-    if match:
-        json_str = match.group()
-        try:
-            return json.loads(json_str)
-        except json.JSONDecodeError:
-            # Try to repair common AI JSON issues
-            json_str = _repair_json(json_str)
+    # Extract the outermost JSON object using brace matching
+    brace_start = cleaned.find("{")
+    if brace_start >= 0:
+        depth = 0
+        brace_end = -1
+        for i in range(brace_start, len(cleaned)):
+            if cleaned[i] == "{":
+                depth += 1
+            elif cleaned[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    brace_end = i + 1
+                    break
+        if brace_end > brace_start:
+            json_str = cleaned[brace_start:brace_end]
             try:
                 return json.loads(json_str)
+            except json.JSONDecodeError:
+                # Try repair
+                repaired = _repair_json(json_str)
+                try:
+                    return json.loads(repaired)
+                except json.JSONDecodeError:
+                    pass
+
+    # Last resort: regex for any JSON-like object
+    match = re.search(r"\{[\s\S]*\}", cleaned)
+    if match:
+        try:
+            return json.loads(match.group())
+        except json.JSONDecodeError:
+            repaired = _repair_json(match.group())
+            try:
+                return json.loads(repaired)
             except json.JSONDecodeError:
                 pass
 
@@ -506,7 +529,32 @@ Return ONLY valid JSON — no markdown fences, no explanation — in exactly thi
         max_tokens=4096,
         messages=[{"role": "user", "content": prompt}],
     )
-    return _extract_json(response.content[0].text)
+    raw_text = response.content[0].text
+
+    # Log the raw response for debugging
+    import logging
+    logging.debug(f"AI response (first 500 chars): {raw_text[:500]}")
+
+    try:
+        return _extract_json(raw_text)
+    except ValueError:
+        # Retry once with a simpler prompt asking for JSON only
+        retry_response = client.messages.create(
+            model=config.AI_MODEL,
+            max_tokens=4096,
+            messages=[
+                {"role": "user", "content": prompt},
+                {"role": "assistant", "content": raw_text},
+                {"role": "user", "content": "Your response above was not valid JSON. Please return ONLY the JSON object with positive_scenarios and negative_scenarios arrays. No markdown, no explanation, just the raw JSON."},
+            ],
+        )
+        retry_text = retry_response.content[0].text
+        try:
+            return _extract_json(retry_text)
+        except ValueError:
+            raise ValueError(
+                f"AI returned invalid JSON after retry. First 200 chars of response: {retry_text[:200]}"
+            )
 
 
 def generate_robot_script(

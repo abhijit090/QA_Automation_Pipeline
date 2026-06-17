@@ -48,32 +48,32 @@ def fetch_ticket_by_key():
         client = get_jira_client()
         ticket = client.get_issue_by_key(ticket_key)
 
-        # Step 2: Build description from ticket details
-        desc_parts = [f"Ticket: {ticket['id']} - {ticket['summary']}"]
+        # Step 2: Build description from whatever the ticket has
+        # Priority: AC > Description > just Summary/Title (always available)
+        ai_input = ""
         if ticket.get("acceptance_criteria"):
-            desc_parts.append(f"Acceptance Criteria:\n{ticket['acceptance_criteria']}")
-        if ticket.get("description"):
-            desc_parts.append(f"Description:\n{ticket['description']}")
-        full_description = "\n\n".join(desc_parts)
+            ai_input = f"{ticket['id']}: {ticket['summary']}\n\nAcceptance Criteria:\n{ticket['acceptance_criteria']}"
+        elif ticket.get("description"):
+            ai_input = f"{ticket['id']}: {ticket['summary']}\n\nDescription:\n{ticket['description']}"
+        else:
+            # Only title available — AI will infer scenarios from title alone
+            ai_input = f"{ticket['id']}: {ticket['summary']}"
 
-        # Step 3: Auto-generate scenarios using AI (from .env ANTHROPIC_API_KEY)
+        # Step 3: Always generate scenarios — use AI with whatever info we have
         scenarios = None
         if config.ANTHROPIC_API_KEY:
-            try:
-                scenarios = generate_scenarios(
-                    app_url=app_url,
-                    description=full_description,
-                    username=data.get("test_username", ""),
-                    password=data.get("test_password", ""),
-                )
-            except Exception as ai_err:
-                ticket["ai_error"] = str(ai_err)
+            scenarios = generate_scenarios(
+                app_url=app_url,
+                description=ai_input,
+                username=data.get("test_username", ""),
+                password=data.get("test_password", ""),
+            )
 
         return jsonify({
             "success": True,
             "ticket": ticket,
             "scenarios": scenarios,
-            "description_used": full_description,
+            "description_used": ai_input,
         })
 
     except requests.exceptions.HTTPError as http_err:

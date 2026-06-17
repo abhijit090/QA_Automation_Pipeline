@@ -60,10 +60,10 @@
       <input id="apiKey" class="field-input" type="password"
              placeholder="sk-ant-… (or set in .env)" />
 
-      <label class="field-label">Jira Ticket (auto-fetch AC & generate scenarios)</label>
+      <label class="field-label">Jira Ticket No. (auto-generates scenarios)</label>
       <div style="display:flex;gap:8px;margin-bottom:10px">
-        <input id="ticketKey" class="field-input" placeholder="e.g. AS-33" style="flex:1" />
-        <button class="btn btn-primary btn-sm" onclick="fetchTicketAndGenerate()">🎫 Fetch & Generate</button>
+        <input id="ticketKey" class="field-input" placeholder="e.g. SBST-123 or AS-33" style="flex:1" />
+        <button class="btn btn-primary btn-sm" onclick="fetchTicketAndGenerate()">🎫 Generate</button>
       </div>
 
       <label class="field-label">Description / Scenario Title</label>
